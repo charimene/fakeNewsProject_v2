@@ -1,5 +1,5 @@
 #etape 4
-#script qui donne l'attribut s a chacun des médias de notre dataset, en se basant sur la liste de tranco
+#script qui donne l'attribut notoriété a chacun des médias de notre dataset, en se basant sur la liste de tranco
 
 import csv
 
@@ -14,9 +14,9 @@ with open("data/top-1m_notoriete.csv", encoding="utf-8") as f:
 
 print(f"{len(classement)} domaines chargés (top 100 000 seulement)")
 
-# fonction d'attribution de S
+# fonction d'attribution de notoriété
 # si le domaine est dans le dictionnaire = il est dans le top 100k
-def attribuer_S(domaine):
+def attribuer_notoriete(domaine):
     if domaine in classement:
         return "s0_connue"
     else:
@@ -27,7 +27,7 @@ with open("data/fakenewsnet_complet_v3.csv", encoding="utf-8") as f:
     lignes = list(reader)
 
 for l in lignes:
-    l["S"] = attribuer_S(l["domaine"])
+    l["notoriete"] = attribuer_notoriete(l["domaine"])
 
 with open("data/fakenewsnet_complet_v4.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=lignes[0].keys())
@@ -36,5 +36,5 @@ with open("data/fakenewsnet_complet_v4.csv", "w", newline="", encoding="utf-8") 
 
 # verif
 from collections import Counter
-compteur = Counter(l["S"] for l in lignes)
+compteur = Counter(l["notoriete"] for l in lignes)
 print(compteur)

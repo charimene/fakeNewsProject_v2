@@ -1,4 +1,5 @@
-# etape 1
+# etape 1 
+# convertir mes dossiers en un seul fichier CSV
 import os
 import json
 import csv
