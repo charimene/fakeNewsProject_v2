@@ -4,6 +4,7 @@ import os
 import json
 import csv
 
+# fonction généré par IA 
 def charger_categorie(dossier_racine, label, nom_dossier):
     lignes = []
     for nom_article in os.listdir(dossier_racine):
@@ -33,7 +34,7 @@ def charger_categorie(dossier_racine, label, nom_dossier):
                 lignes.append(data_utile)
     return lignes
 
-# Charger les 4 catégories (AJUSTE LE CHEMIN selon où sont tes dossiers)
+# Charger les 4 catégories
 # Attention : ce repertoire FakeNewsNet_Dataset/gossipcop_fake' n'existe pas sur git 
 toutes_les_lignes = []
 toutes_les_lignes += charger_categorie('FakeNewsNet_Dataset/gossipcop_fake', 'fake', 'gossipcop_fake')
@@ -43,13 +44,13 @@ toutes_les_lignes += charger_categorie('FakeNewsNet_Dataset/politifact_real', 'r
 
 print("Nombre total d'articles :", len(toutes_les_lignes))
 
-# Récupérer toutes les colonnes possibles (certains articles peuvent avoir des champs différents)
+# Recuperer toutes les colonnes possibles (certains articles peuvent avoir des champs différents)
 toutes_les_colonnes = set()
 for ligne in toutes_les_lignes:
     toutes_les_colonnes.update(ligne.keys())
 toutes_les_colonnes = list(toutes_les_colonnes)
 
-# Écrire le CSV
+# Ecrire le CSV
 with open('data/fakenewsnet_complet.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.DictWriter(f, fieldnames=toutes_les_colonnes)
     writer.writeheader()

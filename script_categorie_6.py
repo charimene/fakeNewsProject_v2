@@ -72,28 +72,8 @@ def main():
     print(f"Catégorie C : {len(cat_c)} articles")
     print(f"Catégorie D : {len(cat_d)} articles")
 
-    # Écrire les articles dans les fichiers correspondants
-    # with open(os.path.join(DOSSIER_SORTIE, "categorie_A.csv"), "w", newline="", encoding="utf-8") as f:
-    #     writer = csv.DictWriter(f, fieldnames=lignes[0].keys())
-    #     writer.writeheader()
-    #     writer.writerows(cat_a)
 
-    # with open(os.path.join(DOSSIER_SORTIE, "categorie_B.csv"), "w", newline="", encoding="utf-8") as f:
-    #     writer = csv.DictWriter(f, fieldnames=lignes[0].keys())
-    #     writer.writeheader()
-    #     writer.writerows(cat_b)
-
-    # with open(os.path.join(DOSSIER_SORTIE, "categorie_C.csv"), "w", newline="", encoding="utf-8") as f:
-    #     writer = csv.DictWriter(f, fieldnames=lignes[0].keys())
-    #     writer.writeheader()
-    #     writer.writerows(cat_c)
-
-    # with open(os.path.join(DOSSIER_SORTIE, "categorie_D.csv"), "w", newline="", encoding="utf-8") as f:
-    #     writer = csv.DictWriter(f, fieldnames=lignes[0].keys())
-    #     writer.writeheader()
-    #     writer.writerows(cat_d)
-
-    # egaliser les catégories en prenant le nombre min d'articles parmi les 2 catégories passées en param
+    # egaliser les categories en prenant le nombre min d'articles parmi les 2 categories passees en param
 
     print("Égalisation des catégories B et D")
     cat_b_egalise, cat_d_egalise = egaliser_categories(cat_b, cat_d)
