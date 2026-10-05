@@ -31,7 +31,7 @@ def charger_exclusions(chemin):
     with open(chemin, newline="", encoding="utf-8-sig") as f:
         return {r["domaine_principal"] for r in csv.DictReader(f)}
 
-def egaliser_categories(groupe_a, groupe_b):
+def egaliser_categories2(groupe_a, groupe_b):
     # on réduit les 2 groupes pour qu'ils aient le même nombre d'articles, en prenant le minimum des 2 tailles
     # et la meme proportions de fake/real 
 
@@ -61,13 +61,44 @@ def egaliser_categories(groupe_a, groupe_b):
 
     return a_egalise, b_egalise
 
+def source_de(l):
+    # retourne si l'article est de gossipcop ou politifact, en se basant sur l'id de l'article
+    return "gossipcop" if l["id"].startswith("gossipcop") else "politifact"
+
+def egaliser_categories(groupe_a, groupe_b):
+    # on egalise par strate (label x source)
+
+    a_egalise = []
+    b_egalise = []
+
+    for s in ("gossipcop", "politifact"):
+        for label in ("fake", "real"):
+            strate_a = [l for l in groupe_a if source_de(l) == s and l["label"] == label]
+            strate_b = [l for l in groupe_b if source_de(l) == s and l["label"] == label]
+
+            n = min(len(strate_a), len(strate_b))
+
+            a_egalise += random.sample(strate_a, n)
+            b_egalise += random.sample(strate_b, n)
+
+    random.shuffle(a_egalise)
+    random.shuffle(b_egalise)
+
+    return a_egalise, b_egalise
+
 def main():
     print("Lecture du fichier")
     lignes = lire_csv(FICHIER_ENTREE)
     print(f"Total d'articles : {len(lignes)}")
 
     exclus = charger_exclusions(FICHIER_EXCLUSIONS)
-    lignes = [l for l in lignes if l["domaine_principal"] not in exclus]
+    #lignes = [l for l in lignes if l["domaine_principal"] not in exclus]
+    lignes = [
+        l for l in lignes
+        if l["domaine_principal"] not in exclus
+        and l["title"].strip()
+        and l["text"].strip()
+    ]
     print(f"apres exclusion des sources problemes : {len(lignes)}")
 
     # Séparer les articles en catégories
