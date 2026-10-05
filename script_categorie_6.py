@@ -9,8 +9,10 @@ import csv
 import os
 import random
 
+random.seed(30)
 FICHIER_ENTREE = "data/fakenewsnet_complet_v5.csv"
 DOSSIER_SORTIE = "data_cat"
+FICHIER_EXCLUSIONS = "data/sources_a_exclure.csv"
 
 os.makedirs(DOSSIER_SORTIE, exist_ok=True)
 
@@ -24,6 +26,10 @@ def ecrire_csv(chemin, lignes):
         ecrivain = csv.DictWriter(f, fieldnames=colonnes)
         ecrivain.writeheader()
         ecrivain.writerows(lignes)
+
+def charger_exclusions(chemin):
+    with open(chemin, newline="", encoding="utf-8-sig") as f:
+        return {r["domaine_principal"] for r in csv.DictReader(f)}
 
 def egaliser_categories(groupe_a, groupe_b):
     # on réduit les 2 groupes pour qu'ils aient le même nombre d'articles, en prenant le minimum des 2 tailles
@@ -60,6 +66,10 @@ def main():
     lignes = lire_csv(FICHIER_ENTREE)
     print(f"Total d'articles : {len(lignes)}")
 
+    exclus = charger_exclusions(FICHIER_EXCLUSIONS)
+    lignes = [l for l in lignes if l["domaine_principal"] not in exclus]
+    print(f"apres exclusion des sources problemes : {len(lignes)}")
+
     # Séparer les articles en catégories
     cat_a = [l for l in lignes if l["notoriete"] == "s0_connue" and l["credibilite"] == "credible"]
     cat_b = [l for l in lignes if l["notoriete"] == "s0_connue" and l["credibilite"] == "peu_credible"]
@@ -82,6 +92,14 @@ def main():
 
     ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_B_egalise.csv"), cat_b_egalise)
     ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_D_egalise.csv"), cat_d_egalise)
+
+    print("Égalisation des catégories A et C")
+    cat_a_egalise, cat_c_egalise = egaliser_categories(cat_a, cat_c)
+    print(f"  -> A : {len(cat_a_egalise)} articles apres egalisation")
+    print(f"  -> C : {len(cat_c_egalise)} articles apres egalisation")
+    
+    ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_A_egalise.csv"), cat_a_egalise)
+    ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_C_egalise.csv"), cat_c_egalise)
 
 if __name__ == "__main__":
     main()

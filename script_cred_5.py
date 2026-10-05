@@ -27,7 +27,7 @@ with open("data/fakenewsnet_complet_v4.csv", encoding="utf-8") as f:
     lignes = list(reader)
 
 for l in lignes:
-    l["credibilite"] = donner_credibilite(l["domaine"])
+    l["credibilite"] = donner_credibilite(l["domaine_principal"])
 
 with open("data/fakenewsnet_complet_v5.csv", "w", newline="", encoding="utf-8") as f:
     writer = csv.DictWriter(f, fieldnames=lignes[0].keys())
