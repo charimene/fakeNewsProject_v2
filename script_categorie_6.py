@@ -65,7 +65,7 @@ def source_de(l):
     # retourne si l'article est de gossipcop ou politifact, en se basant sur l'id de l'article
     return "gossipcop" if l["id"].startswith("gossipcop") else "politifact"
 
-def egaliser_categories(groupe_a, groupe_b):
+def egaliser_categories3(groupe_a, groupe_b):
     # on egalise par strate (label x source)
 
     a_egalise = []
@@ -84,6 +84,27 @@ def egaliser_categories(groupe_a, groupe_b):
     random.shuffle(a_egalise)
     random.shuffle(b_egalise)
 
+    return a_egalise, b_egalise
+
+def egaliser_categories(groupe_a, groupe_b):
+    # strates = toutes les combinaisons (source, label) prseentes dans nos 2 groupes
+    strates = sorted({(source_de(l), l["label"]) for l in groupe_a + groupe_b})
+
+    a_egalise = []
+    b_egalise = []
+    
+    for s, lab in strates:
+        strate_a = [l for l in groupe_a if source_de(l) == s and l["label"] == lab]
+        strate_b = [l for l in groupe_b if source_de(l) == s and l["label"] == lab]
+
+        n = min(len(strate_a), len(strate_b))
+        
+        a_egalise += random.sample(strate_a, n)
+        b_egalise += random.sample(strate_b, n)
+
+    random.shuffle(a_egalise)
+    random.shuffle(b_egalise)
+    
     return a_egalise, b_egalise
 
 def main():
