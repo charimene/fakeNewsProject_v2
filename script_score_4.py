@@ -8,11 +8,11 @@ classement = {}
 with open("data/top-1m_notoriete.csv", encoding="utf-8") as f:
     reader = csv.reader(f)
     for i, (rang, domaine) in enumerate(reader):
-        if i >= 100000: 
+        if i >= 10000: 
             break
         classement[domaine] = int(rang)
 
-print(f"{len(classement)} domaines chargés (top 100 000 seulement)")
+print(f"{len(classement)} domaines chargés (top 10 000 seulement)")
 
 # fonction d'attribution de notoriété
 # si le domaine est dans le dictionnaire = il est dans le top 100k

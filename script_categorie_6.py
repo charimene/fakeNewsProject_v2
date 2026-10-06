@@ -153,11 +153,12 @@ def main():
     resumer_categories(lignes, "AVANT exclusion")
 
     exclus = charger_exclusions(FICHIER_EXCLUSIONS)
+
     lignes = [l for l in lignes if l["domaine_principal"] not in exclus and l["title"].strip() and l["text"].strip()]
     print(f"apres exclusion des sources problemes : {len(lignes)}")
 
     resumer_categories(lignes, "APRES exclusion")
-    
+
     # Séparer les articles en catégories
     cat_a = [l for l in lignes if l["notoriete"] == "s0_connue" and l["credibilite"] == "credible"]
     cat_b = [l for l in lignes if l["notoriete"] == "s0_connue" and l["credibilite"] == "peu_credible"]
@@ -181,6 +182,10 @@ def main():
     #fichiers complets
     ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_B_egalise.csv"), cat_b_egalise)
     ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_D_egalise.csv"), cat_d_egalise)
+
+    #from collections import Counter
+    #print("B :", Counter((source_de(l), l["label"]) for l in cat_b_egalise))
+    #print("D :", Counter((source_de(l), l["label"]) for l in cat_d_egalise))
 
     print("Égalisation des catégories A et C")
     cat_a_egalise, cat_c_egalise = egaliser_categories(cat_a, cat_c)
