@@ -18,8 +18,12 @@ def donner_credibilite(domaine):
     label = credibilite_dict.get(domaine)
     if label == "1":
         return "credible"
-    else:
+    elif label == "0":
+        return "mixte"
+    elif label == "-1":
         return "peu_credible"
+    else:
+        return "non_note"
 
 # charger le dataset fakenewsnet_complet_v4.csv
 with open("data/fakenewsnet_complet_v4.csv", encoding="utf-8") as f:

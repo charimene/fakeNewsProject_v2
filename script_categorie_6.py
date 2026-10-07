@@ -11,7 +11,7 @@ import random
 
 random.seed(30)
 FICHIER_ENTREE = "data/fakenewsnet_complet_v5.csv"
-DOSSIER_SORTIE = "data_cat"
+DOSSIER_SORTIE = "data_out"
 FICHIER_EXCLUSIONS = "data/sources_a_exclure.csv"
 
 os.makedirs(DOSSIER_SORTIE, exist_ok=True)
@@ -122,6 +122,32 @@ def echantillonner(lignes, n):
 
     return resultat
 
+def echantillonner_n(lignes, n):
+    strates = sorted({(source_de(l), l["label"]) for l in lignes})
+    nbr_article_cellule = n // len(strates)
+    reste = n % len(strates) # le nb d'articles qui reste à tirer après avoir pris un nombre égal dans chaque strate
+
+    random.shuffle(strates)
+    resultat = []
+
+    for i, (s, lab) in enumerate(strates):
+
+        k = nbr_article_cellule + (1 if i < reste else 0)
+        cellule = [l for l in lignes if source_de(l) == s and l["label"] == lab]
+        k = min(k, len(cellule)) # je veux pas depasser le nombre d'articles alloué a la cellule
+        print(f"  {s} / {lab} : {len(cellule)} disponibles, on tire {k}")
+        resultat += random.sample(cellule, k)
+
+    # s'il manque des articles, on complete avec des restants au hasard
+    if len(resultat) < n:
+        print(f"Il manque {n - len(resultat)} article(s), on complète")
+        articles_pris = {l["id"] for l in resultat}
+        restants = [l for l in lignes if l["id"] not in articles_pris]
+        resultat += random.sample(restants, n - len(resultat))
+
+    random.shuffle(resultat)
+    return resultat
+
 def resumer_categories(lignes, titre):
     # affiche, pour chaque categorie A, B, C, D : nombre de sources, d'articles, proportion de fake et de real
     categories = {
@@ -144,11 +170,23 @@ def resumer_categories(lignes, titre):
         print(f" {nom}  | {len(sources):7} | {len(cat_articles):8} | {proportion_fake:5.1f} % | {proportion_real:5.1f} %")
     print()
 
+def retirer_doublons(lignes):
+    articles_uniques = {}
+    for l in lignes:
+        cle = (l["url"], l["title"], l["text"])
+        if cle not in articles_uniques:
+            articles_uniques[cle] = l 
+    return list(articles_uniques.values())
 
 def main():
     print("Lecture du fichier")
     lignes = lire_csv(FICHIER_ENTREE)
-    print(f"Total d'articles : {len(lignes)}")
+    nbr_lignes = len(lignes)
+    print(f"Total d'articles : {nbr_lignes}")
+
+    
+    lignes = retirer_doublons(lignes)
+    print(f"doublons retirés : {nbr_lignes - len(lignes)}")
 
     resumer_categories(lignes, "AVANT exclusion")
 
@@ -159,54 +197,16 @@ def main():
 
     resumer_categories(lignes, "APRES exclusion")
 
-    # Séparer les articles en catégories
-    cat_a = [l for l in lignes if l["notoriete"] == "s0_connue" and l["credibilite"] == "credible"]
-    cat_b = [l for l in lignes if l["notoriete"] == "s0_connue" and l["credibilite"] == "peu_credible"]
-    cat_c = [l for l in lignes if l["notoriete"] == "s1_peu_connue" and l["credibilite"] == "credible"]
-    cat_d = [l for l in lignes if l["notoriete"] == "s1_peu_connue" and l["credibilite"] == "peu_credible"]
+        # (garde les prints des tailles de A, B, C, D : ils servent à décrire le corpus)
 
-    print("la taille des catégories avant égalisation :")
-    print(f"Catégorie A : {len(cat_a)} articles")
-    print(f"Catégorie B : {len(cat_b)} articles")
-    print(f"Catégorie C : {len(cat_c)} articles")
-    print(f"Catégorie D : {len(cat_d)} articles")
+    print("Échantillon de 150 articles, tous articles valides confondus")
+    echantillon = echantillonner_n(lignes, 150)
+    print(f"Nombre final : {len(echantillon)}")
 
-
-    # egaliser les categories en prenant le nombre min d'articles parmi les 2 categories passees en param
-
-    print("Égalisation des catégories B et D")
-    cat_b_egalise, cat_d_egalise = egaliser_categories(cat_b, cat_d)
-    print(f"  -> B : {len(cat_b_egalise)} articles apres egalisation")
-    print(f"  -> D : {len(cat_d_egalise)} articles apres egalisation")
-
-    #fichiers complets
-    ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_B_egalise.csv"), cat_b_egalise)
-    ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_D_egalise.csv"), cat_d_egalise)
-
-    #from collections import Counter
-    #print("B :", Counter((source_de(l), l["label"]) for l in cat_b_egalise))
-    #print("D :", Counter((source_de(l), l["label"]) for l in cat_d_egalise))
-
-    print("Égalisation des catégories A et C")
-    cat_a_egalise, cat_c_egalise = egaliser_categories(cat_a, cat_c)
-    print(f"  -> A : {len(cat_a_egalise)} articles apres egalisation")
-    print(f"  -> C : {len(cat_c_egalise)} articles apres egalisation")
-
-    #fichiers complets
-    ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_A_egalise.csv"), cat_a_egalise)
-    ecrire_csv(os.path.join(DOSSIER_SORTIE, "categorie_C_egalise.csv"), cat_c_egalise)
-
-    #LE choix de n articles se fait ici et non sur Kaggle
-    #n =150 articles par catégorie
-    print("Echantillonnage de 150 articles pour B et D")
-
-    cat_b_150 = echantillonner(cat_b_egalise, 150)
-    cat_d_150 = echantillonner(cat_d_egalise, 150)
-
-    ecrire_csv(os.path.join(DOSSIER_SORTIE, "cat_B_150.csv"),cat_b_150)
-
-    ecrire_csv(os.path.join(DOSSIER_SORTIE, "cat_D_150.csv"),cat_d_150)
-
+    from collections import Counter
+    print(Counter((source_de(l), l["label"]) for l in echantillon))
+    ecrire_csv(os.path.join(DOSSIER_SORTIE, "echantillon_150.csv"), echantillon)
+    
 
 if __name__ == "__main__":
     main()
