@@ -8,6 +8,7 @@
 import csv
 import os
 import random
+import re  
 
 random.seed(30)
 FICHIER_ENTREE = "data/fakenewsnet_complet_v5.csv"
@@ -27,105 +28,46 @@ def ecrire_csv(chemin, lignes):
         ecrivain.writeheader()
         ecrivain.writerows(lignes)
 
+
 def charger_exclusions(chemin):
     with open(chemin, newline="", encoding="utf-8-sig") as f:
         return {r["domaine_principal"] for r in csv.DictReader(f)}
 
-def egaliser_categories2(groupe_a, groupe_b):
-    # on réduit les 2 groupes pour qu'ils aient le même nombre d'articles, en prenant le minimum des 2 tailles
-    # et la meme proportions de fake/real 
-
-    fake_a = [l for l in groupe_a if l["label"] == "fake"]
-    real_a = [l for l in groupe_a if l["label"] == "real"]
-    fake_b = [l for l in groupe_b if l["label"] == "fake"]
-    real_b = [l for l in groupe_b if l["label"] == "real"]
-
-    print(f"  fake : {len(fake_a)} (groupe_a), vs {len(fake_b)} (groupe_b)")
-    print(f"  real : {len(real_a)} (groupe_a), vs {len(real_b)} (groupe_b)")
-
-    nbr_fake = min(len(fake_a), len(fake_b))
-    nbr_real = min(len(real_a), len(real_b))
-
-    fake_a = random.sample(fake_a, nbr_fake)
-    fake_b = random.sample(fake_b, nbr_fake)
-    real_a = random.sample(real_a, nbr_real)
-    real_b = random.sample(real_b, nbr_real)
-
-    print(f" On garde {nbr_fake} fake et {nbr_real} real pour chaque groupe")
-
-    a_egalise = fake_a + real_a
-    b_egalise = fake_b + real_b
-
-    random.shuffle(a_egalise)
-    random.shuffle(b_egalise)
-
-    return a_egalise, b_egalise
 
 def source_de(l):
     # retourne si l'article est de gossipcop ou politifact, en se basant sur l'id de l'article
     return "gossipcop" if l["id"].startswith("gossipcop") else "politifact"
 
 
-def egaliser_categories(groupe_a, groupe_b):
-    # strates = toutes les combinaisons (source, label) prseentes dans nos 2 groupes
-    strates = sorted({(source_de(l), l["label"]) for l in groupe_a + groupe_b})
-
-    a_egalise = []
-    b_egalise = []
-    
-    for s, lab in strates:
-        strate_a = [l for l in groupe_a if source_de(l) == s and l["label"] == lab]
-        strate_b = [l for l in groupe_b if source_de(l) == s and l["label"] == lab]
-
-        n = min(len(strate_a), len(strate_b))
-        
-        a_egalise += random.sample(strate_a, n)
-        b_egalise += random.sample(strate_b, n)
-
-    random.shuffle(a_egalise)
-    random.shuffle(b_egalise)
-
-    return a_egalise, b_egalise
+def titre_est_la_source(l):
+    titre = l["title"].strip().lower()
+    return titre == l["domaine"].lower() or titre == l["domaine_principal"].lower()
 
 
-def echantillonner(lignes, n):
-    resultat = []
-    total = len(lignes)
+#focntion qui remplace le nom du domaine ou domaine_principal par le mot neutre "media"
+def remplacer_domaine(texte, l):
+    for nom in (l["domaine"], l["domaine_principal"]):
+        texte = texte.replace(nom, "media")
+    return texte
 
-    # on regroupe les articles par strate (source, label)
-    strates = sorted({(source_de(l), l["label"]) for l in lignes})
 
-    for s, lab in strates:
-        #articles de la strate (s, lab)
-        strate = [l for l in lignes if source_de(l) == s and l["label"] == lab]
+def nettoyer_titre(l):
+    titre = l["title"].strip()
+    sep = r"[\-\|:–—]"
 
-        # proportion de la strate dans lignes
-        proportion = len(strate) / total
+    for nom in (l["domaine"], l["domaine_principal"]):
+        n = re.escape(nom)
+        titre = re.sub(rf"^\s*{n}\s*{sep}?\s*", "", titre, flags=re.IGNORECASE)   # au début : on retire
+        titre = re.sub(rf"\s*{sep}?\s*{n}\s*$", "", titre, flags=re.IGNORECASE)   # à la fin : on retire
+        titre = re.sub(rf"\s*{n}\s*", " media ", titre, flags=re.IGNORECASE)      # au milieu : on remplace
 
-        nbr_strate_n = round(proportion * n)
+    return re.sub(r"\s+", " ", titre).strip()
 
-        resultat += random.sample(strate, nbr_strate_n)
-
-    # on vérifie si on a exactement n articles
-    if len(resultat) < n:
-        print(f"Il manque {n - len(resultat)} article(s)")
-        #on complete avec des articles restants
-        restants = [l for l in lignes if l not in resultat]
-        resultat += random.sample(restants, n - len(resultat))
-
-    elif len(resultat) > n:
-        print(f"Il y a {len(resultat) - n} article en trop")
-        resultat = random.sample(resultat, n)
-
-    print(f"Nombre final : {len(resultat)}")
-    random.shuffle(resultat)
-
-    return resultat
 
 def echantillonner_n(lignes, n):
     strates = sorted({(source_de(l), l["label"]) for l in lignes})
     nbr_article_cellule = n // len(strates)
-    reste = n % len(strates) # le nb d'articles qui reste à tirer après avoir pris un nombre égal dans chaque strate
+    reste = n % len(strates) # le nb d'articles qui reste a tirer apres avoir pris un nombre egal dans chaque strate
 
     random.shuffle(strates)
     resultat = []
@@ -147,6 +89,7 @@ def echantillonner_n(lignes, n):
 
     random.shuffle(resultat)
     return resultat
+
 
 def resumer_categories(lignes, titre):
     # affiche, pour chaque categorie A, B, C, D : nombre de sources, d'articles, proportion de fake et de real
@@ -170,6 +113,7 @@ def resumer_categories(lignes, titre):
         print(f" {nom}  | {len(sources):7} | {len(cat_articles):8} | {proportion_fake:5.1f} % | {proportion_real:5.1f} %")
     print()
 
+
 def retirer_doublons(lignes):
     articles_uniques = {}
     for l in lignes:
@@ -178,12 +122,12 @@ def retirer_doublons(lignes):
             articles_uniques[cle] = l 
     return list(articles_uniques.values())
 
+
 def main():
     print("Lecture du fichier")
     lignes = lire_csv(FICHIER_ENTREE)
     nbr_lignes = len(lignes)
     print(f"Total d'articles : {nbr_lignes}")
-
     
     lignes = retirer_doublons(lignes)
     print(f"doublons retirés : {nbr_lignes - len(lignes)}")
@@ -192,7 +136,11 @@ def main():
 
     exclus = charger_exclusions(FICHIER_EXCLUSIONS)
 
-    lignes = [l for l in lignes if l["domaine_principal"] not in exclus and l["title"].strip() and l["text"].strip()]
+    lignes = [l for l in lignes if l["domaine_principal"] not in exclus 
+              and l["title"].strip() 
+              and l["text"].strip() 
+              and not titre_est_la_source(l)]
+    
     print(f"apres exclusion des sources problemes : {len(lignes)}")
 
     resumer_categories(lignes, "APRES exclusion")
@@ -202,6 +150,12 @@ def main():
     print("Échantillon de 150 articles, tous articles valides confondus")
     echantillon = echantillonner_n(lignes, 150)
     print(f"Nombre final : {len(echantillon)}")
+
+    for l in echantillon:
+        l["title_original"] = l["title"]                    # copie de l'original
+        l["text_original"] = l["text"]
+        l["title"] = nettoyer_titre(l)                      # ecrase title par la version nettoyee
+        l["text"] = remplacer_domaine(l["text"], l)         # ecrase text par la version nettoyeee
 
     from collections import Counter
     print(Counter((source_de(l), l["label"]) for l in echantillon))
