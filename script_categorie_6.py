@@ -145,7 +145,9 @@ def main():
 
     resumer_categories(lignes, "APRES exclusion")
 
-        # (garde les prints des tailles de A, B, C, D : ils servent à décrire le corpus)
+    domaines = sorted({l["domaine_principal"] for l in lignes if l["domaine_principal"] != "inconnu"})
+    ecrire_csv(os.path.join(DOSSIER_SORTIE, "domaines_valides.csv"), [{"domaine_principal": d} for d in domaines])
+    
 
     print("Échantillon de 150 articles, tous articles valides confondus")
     echantillon = echantillonner_n(lignes, 150)
