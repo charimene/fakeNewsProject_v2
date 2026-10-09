@@ -145,9 +145,18 @@ def main():
 
     resumer_categories(lignes, "APRES exclusion")
 
-    domaines = sorted({l["domaine_principal"] for l in lignes if l["domaine_principal"] != "inconnu"})
-    ecrire_csv(os.path.join(DOSSIER_SORTIE, "domaines_valides.csv"), [{"domaine_principal": d} for d in domaines])
-    
+    #domaines = sorted({l["domaine_principal"] for l in lignes if l["domaine_principal"] != "inconnu"})
+    #ecrire_csv(os.path.join(DOSSIER_SORTIE, "domaines_valides.csv"), [{"domaine_principal": d} for d in domaines])
+
+    # un domaine = une ligne (domaine_principal, notoriete, credibilite)
+    domaines = {}
+    for l in lignes:
+        d = l["domaine_principal"]
+        if d != "inconnu":
+            domaines[d] = {"domaine_principal": d, "notoriete": l["notoriete"], "credibilite": l["credibilite"]}
+
+    ecrire_csv("data/domaines_valides.csv", [domaines[d] for d in sorted(domaines)])
+        
 
     print("Échantillon de 150 articles, tous articles valides confondus")
     echantillon = echantillonner_n(lignes, 150)
